@@ -130,6 +130,11 @@
   <ItemGroup>
     <ClCompile Include="Assignment task.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="Persons3.txt" />
+    <Text Include="Persons2.txt" />
+    <Text Include="Persons4.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
