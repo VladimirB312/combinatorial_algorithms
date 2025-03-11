@@ -85,8 +85,8 @@ void Graph::MarksComponents()
 		if (!m_visited[vertex])
 		{
 			DfsOnInvertedGraph(vertex, componentNumber);
-		}
-		componentNumber++;
+			componentNumber++;
+		}		
 	}
 }
 

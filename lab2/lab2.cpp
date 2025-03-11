@@ -20,13 +20,20 @@ void CheckArgs(int argc, char* argv[])
 
 std::vector<std::vector<size_t>> ParseAdjacencyList(std::istream& input)
 {
-	size_t vertexCount, edgeCount;
-	input >> vertexCount >> edgeCount;
+	size_t vertexCount = 0, edgeCount = 0;
+	if (!(input >> vertexCount >> edgeCount))
+	{
+		throw std::runtime_error("Invalid file format");
+	}
+
 	std::vector<std::vector<size_t>> adjList(vertexCount);
 	for (size_t i = 0; i < edgeCount; i++)
 	{
-		size_t vertex, edge;
-		input >> vertex >> edge;
+		size_t vertex = 0, edge = 0;
+		if (!(input >> vertex >> edge) || vertex >= vertexCount)
+		{
+			throw std::runtime_error("Invalid file format");
+		}
 		adjList[vertex].push_back(edge);
 	}
 
