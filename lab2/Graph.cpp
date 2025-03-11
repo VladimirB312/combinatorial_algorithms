@@ -1,93 +1,142 @@
 #include "Graph.h"
 #include <sstream>
+#include <algorithm>
+#include <iostream>
 
-Graph::Graph(const AdjacencyMatrix& matrix)
-	: adjacencyMatrix(matrix), dimension(matrix.size())
+Graph::Graph(const AdjacencyList& list)
+	: m_adjacencyList(list)
 {
-	visited = std::vector<bool>(dimension, false);
+	m_visited.resize(m_adjacencyList.size(), false);
+	m_timeIn.resize(m_adjacencyList.size(), 0);
+	m_timeOut.resize(m_adjacencyList.size(), 0);
 }
 
-void Graph::PrintTimeStamps(std::ostream& output)
+Components Graph::GetComponents()
 {
-	for (const auto& [key, value] : timeStamps)
-	{
-		output << "Vertex " << key << ": IN = " << value.in << " OUT = " << value.out << "\n";
-	}
+	SetTimeStamps();
+	TimeSort();
+	SetInvertedList();
+	MarksComponents();
+
+	return m_components;
 }
 
 void Graph::SetTimeStamps()
 {
-	size_t time = 0;
-	DfsMatrix(0, time);
+	size_t time = 1;
+	for (size_t i = 0; i < m_visited.size(); i++)
+	{
+		if (!m_visited[i])
+		{
+			Dfs(i, time);
+		}
+	}
 }
 
-void Graph::DfsMatrix(size_t vertex, size_t& time)
+void Graph::Dfs(size_t vertex, size_t& time)
 {
-	if (visited[vertex])
+	if (m_visited[vertex])
 	{
 		return;
 	}
-	visited[vertex] = true;
-	timeStamps[vertex].in = time++;
-	for (size_t i = 0; i < dimension; i++)
+	m_visited[vertex] = true;
+	m_timeIn[vertex] = time++;
+	for (const auto& edge : m_adjacencyList[vertex])
 	{
-		if (adjacencyMatrix[vertex][i] == 1)
-		{
-			DfsMatrix(i, time);
-		}
+		Dfs(edge, time);
 	}
-	timeStamps[vertex].out = time++;
+	m_timeOut[vertex] = time++;
 }
 
-AdjacencyList Graph::GetAdjacencyListFromAdjacencyMatrix()
+void Graph::TimeSort()
 {
-	AdjacencyList result{};
-
-	for (size_t i = 0; i < dimension; i++)
+	std::vector<std::pair<size_t, size_t>> sortedTime(m_timeOut.size());
+	for (size_t i = 0; i < m_timeOut.size(); i++)
 	{
-		for (size_t j = 0; j < dimension; j++)
+		sortedTime[i] = { i, m_timeOut[i] };
+	}
+	std::sort(sortedTime.begin(), sortedTime.end(),
+		[](std::pair<size_t, size_t> time1, std::pair<size_t, size_t> time2)
 		{
-			if (adjacencyMatrix[i][j] == 1)
+			return time1.second > time2.second;
+		});
+
+	m_sortedTime = sortedTime;
+}
+
+void Graph::SetInvertedList()
+{
+	m_invertedList.resize(m_adjacencyList.size());
+	for (size_t i = 0; i < m_adjacencyList.size(); i++)
+	{
+		for (const auto edge : m_adjacencyList[i])
+		{
+			m_invertedList[edge].push_back(i);
+		}
+	}
+}
+
+void Graph::MarksComponents()
+{
+	std::fill(m_visited.begin(), m_visited.end(), false);
+	size_t componentNumber = 0;
+	for (const auto& [vertex, time] : m_sortedTime)
+	{
+		if (!m_visited[vertex])
+		{
+			DfsOnInvertedGraph(vertex, componentNumber);
+		}
+		componentNumber++;
+	}
+}
+
+void Graph::DfsOnInvertedGraph(size_t vertex, size_t componentNumber)
+{
+	if (m_visited[vertex])
+	{
+		return;
+	}
+
+	m_visited[vertex] = true;
+	m_components[componentNumber].push_back(vertex);
+
+	for (const auto& edge : m_invertedList[vertex])
+	{
+		DfsOnInvertedGraph(edge, componentNumber);
+	}
+}
+
+AdjacencyList Graph::GetAdjacencyListFromAdjacencyMatrix(const AdjacencyMatrix& matrix)
+{
+	AdjacencyList result(matrix.size());
+
+	for (size_t i = 0; i < matrix.size(); i++)
+	{
+		for (size_t j = 0; j < matrix.size(); j++)
+		{
+			if (matrix[i][j] == 1)
 			{
 				result[i].push_back(j);
 			}
 		}
 	}
-}
-
-size_t Graph::GetMaxVertexNumber() 
-{
-	size_t maxVertexNumber = 0;
-	for (const auto& [vertex, edgeList] : adjacencyList)
-	{
-		if (vertex > maxVertexNumber)
-		{
-			maxVertexNumber = vertex;
-		}
-		for (const auto& edge : edgeList)
-		{
-			if (edge > maxVertexNumber)
-			{
-				maxVertexNumber = edge;
-			}
-		}
-	}
-
-	return maxVertexNumber;
-}
-
-AdjacencyMatrix Graph::GetAdjacencyMatrixFromAdjacencyList()
-{
-	size_t maxVertexNumber = GetMaxVertexNumber();
-	AdjacencyMatrix result(maxVertexNumber + 1, std::vector<size_t>(maxVertexNumber + 1, 0));
-
-	for (const auto& [vertex, edgeList] : adjacencyList)
-	{
-		for (const auto& edge : edgeList)
-		{
-			result[vertex][edge] = 1;
-		}
-	}
 
 	return result;
+}
+
+
+AdjacencyMatrix Graph::GetAdjacencyMatrixFromAdjacencyList(const AdjacencyList& adjList)
+{
+	size_t matrixSize = adjList.size();
+	AdjacencyMatrix adjencyMatrix(matrixSize, std::vector<size_t>(matrixSize, 0));
+
+	for (size_t i = 0; i < adjList.size(); i++)
+	{
+		for (const auto& edge : adjList[i])
+		{
+			adjencyMatrix[i][edge] = 1;
+		}
+	}
+
+	return adjencyMatrix;
 }
