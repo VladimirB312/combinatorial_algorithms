@@ -34,9 +34,9 @@ SCENARIO("Get stringly connected components of graph")
 	WHEN("graph contain 3 vertices and one component")
 	{
 		AdjacencyList adjList = {
-			{{1}},
-			{{2}},
-			{{0}},
+			{{1}}, // 0 -> 1
+			{{2}}, // 1 -> 2
+			{{0}}, // 2 -> 0
 		};
 
 		Graph graph(adjList);
@@ -53,9 +53,9 @@ SCENARIO("Get stringly connected components of graph")
 	WHEN("graph contain 3 vertices and two component")
 	{
 		AdjacencyList adjList = {
-			{{1}},
-			{{0}},
-			{{}},
+			{{1}}, // 0 -> 1
+			{{0}}, // 1 -> 0
+			{{}}, // 2
 		};
 
 		Graph graph(adjList);
@@ -74,18 +74,21 @@ SCENARIO("Get stringly connected components of graph")
 	WHEN("graph contain 5 vertices and one component")
 	{
 		AdjacencyList adjList = {
-			{{1}},
-			{{4}},
-			{{1, 4}},
-			{{0}},
-			{{2, 3}}
+			{{1}}, // 0 -> 1
+			{{4}}, // 1 -> 4
+			{{1, 4}}, // 2 -> 1, 4
+			{{0}}, // 3 -> 0
+			{{2, 3}} // 4 -> 2, 3
 		};
 
 		Graph graph(adjList);
 		Components components = graph.GetComponents();
+		auto vertices = components[0];
+		std::sort(vertices.begin(), vertices.end());
 		THEN("components must be contain one component")
 		{
 			CHECK(components.size() == 1);
+			CHECK(vertices == std::vector<size_t>{0, 1, 2, 3, 4});
 		}
 	}
 }
